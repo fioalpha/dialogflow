@@ -99,9 +99,18 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
     let param = produto.join('+');
     if(color !== '') param += '+' + color;
     param = 'https://www.netshoes.com.br/busca?nsCat=Natural&q=' + param;
-    agent.add('Mas é claro! Navegue agora mesmo por produtos com a descrição fornecida: '+param)
 
-    
+    const res = await axios.get(param)
+    const $ = cheerio.load(res.data)
+    const nome_produto = $('a.item-card__description__product-name', res.data).first().text();
+
+    if(nome_produto.length == 0) {
+        agent.add('Não encontrei nenhum produto com a descrição fornecida ): prometo me esforçar mais na próxima vez!');
+        return;
+    }
+    const link_produto = $('a.item-card__description__product-name', res.data).first().attr('href')
+
+    agent.add('Encontrei ' + nome_produto + ' para você! (:\nLink para comprar: '+link_produto+'\n\nPara mais produtos na categoria: '+param) 
   }
 
   async function voucherStatus(agent) {
