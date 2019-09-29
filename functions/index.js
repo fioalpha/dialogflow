@@ -18,47 +18,43 @@
 const axios = require('axios');
 const functions = require('firebase-functions');
 const { WebhookClient } = require('dialogflow-fulfillment');
-const { Card, Suggestion } = require('dialogflow-fulfillment');
-const { Carousel } = require('actions-on-google');
 
 process.env.DEBUG = 'dialogflow:debug'; // enables lib debugging statements
-
-// URLs for images used in card rich responses
-const imageUrl = 'https://developers.google.com/actions/images/badges/XPM_BADGING_GoogleAssistant_VER.png';
-const imageUrl2 = 'https://lh3.googleusercontent.com/Nu3a6F80WfixUqf_ec_vgXy_c0-0r4VLJRXjVFF_X_CIilEu8B9fT35qyTEj_PEsKw';
-const linkUrl = 'https://assistant.google.com/';
 
 exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, response) => {
   const agent = new WebhookClient({ request, response });
   console.log('Dialogflow Request headers: ' + JSON.stringify(request.headers));
   console.log('Dialogflow Request body: ' + JSON.stringify(request.body));
 
-  function googleAssistantOther(agent) {
-    let conv = agent.conv(); // Get Actions on Google library conversation object
-    conv.ask('Please choose an item:'); // Use Actions on Google library to add responses
-    conv.ask(new Carousel({
-      title: 'Google Assistant',
-      items: {
-        'WorksWithGoogleAssistantItemKey': {
-          title: 'Works With the Google Assistant',
-          description: 'If you see this logo, you know it will work with the Google Assistant.',
-          image: {
-            url: imageUrl,
-            accessibilityText: 'Works With the Google Assistant logo',
-          },
-        },
-        'GoogleHomeItemKey': {
-          title: 'Google Home',
-          description: 'Google Home is a powerful speaker and voice Assistant.',
-          image: {
-            url: imageUrl2,
-            accessibilityText: 'Google Home'
-          },
-        },
-      },
-    }));
-    // Add Actions on Google library responses to your agent's response
-    agent.add(conv);
+  async function pedidoIntent(agent) {
+    const pedidos = [{
+        nome: 'Puma1',
+        numero_pedido: 10210209
+    },{
+        nome: 'Puma2',
+        numero_pedido: 10210209
+    },
+    {
+        nome: 'Puma3',
+        numero_pedido: 10210209
+    }];
+
+    for(let i = 0; i < 3; i++) {
+        let resultado = await axios.get('https://us-central1-hackathon-2019-254113.cloudfunctions.net/purchase_status')
+        pedidos[i].status = resultado.data.status;
+    }
+
+    const fim = [];
+
+    const apresentacao = 'Encontramos os seguintes pedidos e seus respectivos status no nosso sistema.\n';
+    fim.push(apresentacao);
+
+    pedidos.forEach(pedido => {
+        const {nome, numero_pedido, status} = pedido;
+        fim.push('Nome: '+nome+'\nNumero: '+numero_pedido+'\nStatus: '+status);
+    });
+
+    agent.add(fim.join('\n\n'));
   }
 
   function welcome(agent) {
@@ -97,37 +93,22 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
   }
 
   async function voucherStatus(agent) {
-      var test = await axios.get('https://us-central1-hackathon-2019-254113.cloudfunctions.net/purchase_status')
-      agent.add(test.data.status);
-  }
-
-  function other(agent) {
-    agent.add(`This message is from Dialogflow's Cloud Functions for Firebase editor!`);
-    agent.add(new Card({
-        title: `Title: this is a card title`,
-        imageUrl: imageUrl,
-        text: `This is the body text of a card.  You can even use line\n  breaks and emoji! 💁`,
-        buttonText: 'This is a button',
-        buttonUrl: linkUrl
-      })
-    );
-    agent.add(new Suggestion(`Quick Reply`));
-    agent.add(new Suggestion(`Suggestion`));
-    agent.setContext({ name: 'weather', lifespan: 2, parameters: { city: 'Rome' }});
+      var test = await axios.get('https://us-central1-hackathon-2019-254113.cloudfunctions.net/voucher_balance')
+      if(test.data.value === 0) {
+        let messagem = 'Seu saldo de "Vouchers" está vazio. Se houver alguma análise pendente, será mostrada abaixo:\n\nStatus da troca: ';
+        const status_troca = await axios.get('https://us-central1-hackathon-2019-254113.cloudfunctions.net/exchange_status');
+        agent.add(messagem + status_troca.data.status);
+      } else agent.add('Saldo: R$' + (test.data.value / 100).toFixed(2));
   }
 
   // Run the proper handler based on the matched Dialogflow intent
   let intentMap = new Map();
   intentMap.set('Saudacao', welcome);
+  intentMap.set('Pedido', pedidoIntent);
   intentMap.set('Default Fallback Intent', fallback);
   intentMap.set('Voucher', voucherStatus);
   // if requests for intents other than the default welcome and default fallback
   // is from the Google Assistant use the `googleAssistantOther` function
   // otherwise use the `other` function
-  if (agent.requestSource === agent.ACTIONS_ON_GOOGLE) {
-    intentMap.set(null, googleAssistantOther);
-  } else {
-    intentMap.set(null, other);
-  }
   agent.handleRequest(intentMap);
 });

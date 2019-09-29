@@ -9,6 +9,9 @@
     "start": "firebase serve --only functions:dialogflowFirebaseFulfillment",
     "deploy": "firebase deploy --only functions:dialogflowFirebaseFulfillment"
   },
+  "engines": {
+    "node": "8"
+  },
   "dependencies": {
     "firebase-admin": "^5.12.1",
     "firebase-functions": "^1.0.3",
