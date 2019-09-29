@@ -15,7 +15,7 @@
  */
 
 'use strict';
-
+const axios = require('axios');
 const functions = require('firebase-functions');
 const { WebhookClient } = require('dialogflow-fulfillment');
 const { Card, Suggestion } = require('dialogflow-fulfillment');
@@ -62,12 +62,35 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
   }
 
   function welcome(agent) {
+
+    axios.get('https://www.google.com')
+      .then(function (response) {
+        console.log(response);
+      })
+      .catch(function (error) {
+        // handle error
+        console.log(error);
+      })
+
     agent.add(`Welcome to my agent!`);
   }
 
   function fallback(agent) {
-    agent.add(`I didn't understand`);
-    agent.add(`I'm sorry, can you try again?`);
+
+    console.log("dshfkjldshfklhdslkfhdl");
+    axios.get('https://us-central1-hackathon-2019-254113.cloudfunctions.net/purchase_status')
+      .then(function (response) {
+      
+        console.log(response.data.status);
+
+        agent.add(response.data.status);
+        // agent.add(`I'm sorry, can you try again?`);
+
+      })
+      .catch(function (error) {
+        // handle error
+        console.log(error);
+      })
   }
 
   function other(agent) {
@@ -87,7 +110,7 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
 
   // Run the proper handler based on the matched Dialogflow intent
   let intentMap = new Map();
-  intentMap.set('Default Welcome Intent', welcome);
+  intentMap.set('saudacao', welcome);
   intentMap.set('Default Fallback Intent', fallback);
   // if requests for intents other than the default welcome and default fallback
   // is from the Google Assistant use the `googleAssistantOther` function
