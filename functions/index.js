@@ -75,22 +75,30 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
     agent.add(`Welcome to my agent!`);
   }
 
-  function fallback(agent) {
+
+  async function fallback(agent) {
 
     console.log("dshfkjldshfklhdslkfhdl");
-    axios.get('https://us-central1-hackathon-2019-254113.cloudfunctions.net/purchase_status')
-      .then(function (response) {
+    var test = await axios.get('https://us-central1-hackathon-2019-254113.cloudfunctions.net/purchase_status')
+      // .then(function (response) {
       
-        console.log(response.data.status);
-
-        agent.add(response.data.status);
+      //   console.log(response.data.status);
+      //   response.fulfillmentText = "sdkf;lskdfh;lsdhf;d";
+        // agent.add("dhfsdklfhlskdhfkldslkhflkdflksdkhfksdhflksdhklfhlksdhfklhdlkf");
         // agent.add(`I'm sorry, can you try again?`);
 
-      })
-      .catch(function (error) {
-        // handle error
-        console.log(error);
-      })
+      // })
+      // .catch(function (error) {
+      //   console.log(error);
+      // })
+
+      agent.add(test.data.status);
+
+  }
+
+  async function voucherStatus(agent) {
+      var test = await axios.get('https://us-central1-hackathon-2019-254113.cloudfunctions.net/purchase_status')
+      agent.add(test.data.status);
   }
 
   function other(agent) {
@@ -110,8 +118,9 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
 
   // Run the proper handler based on the matched Dialogflow intent
   let intentMap = new Map();
-  intentMap.set('saudacao', welcome);
+  intentMap.set('Saudacao', welcome);
   intentMap.set('Default Fallback Intent', fallback);
+  intentMap.set('Voucher', voucherStatus);
   // if requests for intents other than the default welcome and default fallback
   // is from the Google Assistant use the `googleAssistantOther` function
   // otherwise use the `other` function
