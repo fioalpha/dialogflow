@@ -18,6 +18,7 @@
 const axios = require('axios');
 const functions = require('firebase-functions');
 const { WebhookClient } = require('dialogflow-fulfillment');
+const cheerio = require('cheerio')
 
 process.env.DEBUG = 'dialogflow:debug'; // enables lib debugging statements
 
@@ -92,6 +93,17 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
 
   }
 
+  async function queroComprar(agent) {
+    const {produto, color} = agent.parameters
+    if(produto.length == 0) agent.add('Não encontrei nenhum produto com essa descrição');
+    let param = produto.join('+');
+    if(color !== '') param += '+' + color;
+    param = 'https://www.netshoes.com.br/busca?nsCat=Natural&q=' + param;
+    agent.add('Mas é claro! Navegue agora mesmo por produtos com a descrição fornecida: '+param)
+
+    
+  }
+
   async function voucherStatus(agent) {
       var test = await axios.get('https://us-central1-hackathon-2019-254113.cloudfunctions.net/voucher_balance')
       if(test.data.value === 0) {
@@ -107,6 +119,7 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
   intentMap.set('Pedido', pedidoIntent);
   intentMap.set('Default Fallback Intent', fallback);
   intentMap.set('Voucher', voucherStatus);
+  intentMap.set('queroComprar', queroComprar);
   // if requests for intents other than the default welcome and default fallback
   // is from the Google Assistant use the `googleAssistantOther` function
   // otherwise use the `other` function
